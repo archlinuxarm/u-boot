@@ -18,7 +18,7 @@
 /*
  * Version number information
  */
-#define CONFIG_IDENT_STRING	"\nSeagate GoFlex Home"
+#define CONFIG_IDENT_STRING	" Arch Linux ARM\nSeagate GoFlex Home"
 
 /*
  * High Level Configuration Options (easy to change)
@@ -63,6 +63,11 @@
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_EXT4
 #define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
+#define CONFIG_CMD_FS_GENERIC
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_SUPPORT_RAW_INITRD
+#define CONFIG_EFI_PARTITION
+#define CONFIG_OF_LIBFDT
 
 /*
  * mv-common.h should be defined after CMD configs since it used them
@@ -72,6 +77,8 @@
 
 #undef CONFIG_SYS_PROMPT	/* previously defined in mv-common.h */
 #define CONFIG_SYS_PROMPT	"GoFlexHome> "	/* Command Prompt */
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 
 /*
  *  Environment variables configurations
