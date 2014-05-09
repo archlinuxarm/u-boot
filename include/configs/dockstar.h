@@ -15,7 +15,7 @@
 /*
  * Version number information
  */
-#define CONFIG_IDENT_STRING	"\nSeagate FreeAgent DockStar"
+#define CONFIG_IDENT_STRING	" Arch Linux ARM\nSeagate FreeAgent DockStar"
 
 /*
  * High Level Configuration Options (easy to change)
@@ -37,6 +37,9 @@
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_USB
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_SUPPORT_RAW_INITRD
+
 /*
  * mv-common.h should be defined after CMD configs since it used them
  * to enable certain macros
@@ -45,6 +48,8 @@
 
 #undef CONFIG_SYS_PROMPT	/* previously defined in mv-common.h */
 #define CONFIG_SYS_PROMPT	"DockStar> "	/* Command Prompt */
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 
 /*
  *  Environment variables configurations
@@ -97,7 +102,11 @@
  */
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_FAT
+#define CONFIG_CMD_EXT4
+#define CONFIG_CMD_FS_GENERIC
 #define CONFIG_CMD_JFFS2
+#define CONFIG_JFFS2_NAND
+#define CONFIG_JFFS2_LZO
 #define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS
 #define CONFIG_RBTREE
@@ -105,5 +114,7 @@
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_LZO
+#define CONFIG_EFI_PARTITION
+#define CONFIG_OF_LIBFDT
 
 #endif /* _CONFIG_DOCKSTAR_H */
