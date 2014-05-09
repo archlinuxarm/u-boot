@@ -96,27 +96,61 @@
 #define CONFIG_ENV_SIZE			0x20000	/* 128k */
 #define CONFIG_ENV_ADDR			0xC0000
 #define CONFIG_ENV_OFFSET		0xC0000	/* env starts here */
+#define CONFIG_LOADADDR			0x800000
 
 /*
  * Default environment variables
  */
-#define CONFIG_BOOTCOMMAND \
-	"setenv bootargs ${console} ${mtdparts} ${bootargs_root}; " \
-	"ubi part root; " \
-	"ubifsmount ubi:root; " \
-	"ubifsload 0x800000 ${kernel}; " \
-	"bootm 0x800000"
-
 #define CONFIG_MTDPARTS \
-	"mtdparts=orion_nand:1m(uboot),6M(uImage),-(root)\0"
+	"mtdparts=orion_nand:1M(u-boot),4M(uImage),32M(rootfs),-(data)\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"console=console=ttyS0,115200\0" \
 	"mtdids=nand0=orion_nand\0" \
 	"mtdparts="CONFIG_MTDPARTS \
-	"kernel=/boot/uImage\0" \
-	"bootargs_root=ubi.mtd=root root=ubi0:root rootfstype=ubifs ro\0"
+	"zimage=/boot/zImage\0" \
+	"uimage=/boot/uImage\0" \
+	"fdt_file=/boot/dtbs/kirkwood-dockstar.dtb\0" \
+	"fdt_addr=0x1400000\0" \
+	"usbdev=0\0" \
+	"usbpart=1\0" \
+	"usbroot=/dev/sda1 rw rootwait\0" \
+	"usbargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"root=${usbroot} " \
+		"${mtdparts}\0" \
+	"loadbootenv=load usb ${usbdev}:${usbpart} ${loadaddr} /boot/uEnv.txt\0" \
+	"importbootenv=echo Importing environment from mmc (uEnv.txt)...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"loaduimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${uimage}\0" \
+	"loadzimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${zimage}\0" \
+	"loadfdt=load usb ${usbdev}:${usbpart} ${fdt_addr} ${fdt_file}\0" \
+	"usbbootz=echo Booting from USB ...; " \
+		"run usbargs; " \
+		"bootz ${loadaddr} - ${fdt_addr};\0" \
+	"usbbootm=echo Booting from USB ...; " \
+		"run usbargs; " \
+		"bootm ${loadaddr};\0"
 
+#define CONFIG_BOOTCOMMAND \
+	"usb start;" \
+	"if run loadbootenv; then " \
+		"run importbootenv;" \
+	"fi;" \
+	"echo Checking if uenvcmd is set ...;" \
+	"if test -n $uenvcmd; then " \
+		"echo Running uenvcmd ...;" \
+		"run uenvcmd;" \
+	"fi;" \
+	"echo Running default loadzimage ...;" \
+	"if run loadzimage; then " \
+		"run loadfdt;" \
+		"run mmcbootz;" \
+	"fi;" \
+	"echo Running default loaduimage ...;" \
+	"if run loaduimage; then " \
+		"run mmcbootm;" \
+	"fi;"
 /*
  * Ethernet Driver configuration
  */
