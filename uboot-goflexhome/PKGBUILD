@@ -1,0 +1,31 @@
+# U-Boot: Marvell Kirkwood platforms
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=2
+
+pkgname=uboot-goflexhome
+pkgver=2014.04
+pkgrel=1
+arch=('arm')
+pkgdesc="U-Boot for the Seagate GoFlex Home"
+url="https://github.com/archlinuxarm/u-boot"
+makedepends=('git')
+license=('GPL')
+source=("git+https://github.com/archlinuxarm/u-boot.git#branch=2014.04-GFH-WIP")
+md5sums=('SKIP')
+
+build() {
+  cd u-boot
+  
+  unset CFLAGS CXXFLAGS LDFLAGS
+  
+  make distclean
+  make goflexhome_config
+  make u-boot.kwb
+  dd if=u-boot.kwb of=uboot-goflexhome.kwb bs=512k conv=sync
+}
+
+package() {
+  mkdir -p "${pkgdir}"/boot
+  cp u-boot/uboot-goflexhome.kwb "${pkgdir}"/boot
+}
