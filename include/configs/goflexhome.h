@@ -61,12 +61,9 @@
 #define CONFIG_CMD_USB
 #define CONFIG_CMD_IDE
 #define CONFIG_CMD_DATE
-#define CONFIG_CMD_EXT4
 #define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
-#define CONFIG_CMD_FS_GENERIC
 #define CONFIG_CMD_BOOTZ
 #define CONFIG_SUPPORT_RAW_INITRD
-#define CONFIG_EFI_PARTITION
 #define CONFIG_OF_LIBFDT
 
 /*
@@ -151,6 +148,7 @@
 	"if run loaduimage; then " \
 		"run usbbootm;" \
 	"fi;"
+
 /*
  * Ethernet Driver configuration
  */
@@ -160,17 +158,19 @@
 #endif /* CONFIG_CMD_NET */
 
 /*
- *  * SATA Driver configuration
- *   */
+ * SATA Driver configuration
+ */
 #ifdef CONFIG_MVSATA_IDE
 #define CONFIG_SYS_ATA_IDE0_OFFSET      MV_SATA_PORT0_OFFSET
 #endif /*CONFIG_MVSATA_IDE*/
 
 /*
- *  * RTC driver configuration
- *   */
+ * Date Time
+ */
 #ifdef CONFIG_CMD_DATE
 #define CONFIG_RTC_MV
+#define CONFIG_CMD_SNTP
+#define CONFIG_CMD_DNS
 #endif /* CONFIG_CMD_DATE */
 
 #endif /* _CONFIG_GOFLEXHOME_H */
