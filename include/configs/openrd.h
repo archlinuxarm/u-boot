@@ -18,13 +18,16 @@
  * Version number information
  */
 #ifdef CONFIG_BOARD_IS_OPENRD_ULTIMATE
-# define CONFIG_IDENT_STRING	"\nOpenRD-Ultimate"
+# define CONFIG_IDENT_STRING	" Arch Linux ARM\nOpenRD-Ultimate"
+# define CONFIG_FDT_FILE	"/boot/dtbs/kirkwood-openrd-ultimate.dtb\0"
 #else
 # ifdef CONFIG_BOARD_IS_OPENRD_CLIENT
-#  define CONFIG_IDENT_STRING	"\nOpenRD-Client"
+#  define CONFIG_IDENT_STRING	" Arch Linux ARM\nOpenRD-Client"
+#  define CONFIG_FDT_FILE	"/boot/dtbs/kirkwood-openrd-client.dtb\0"
 # else
 #  ifdef CONFIG_BOARD_IS_OPENRD_BASE
-#   define CONFIG_IDENT_STRING	"\nOpenRD-Base"
+#   define CONFIG_IDENT_STRING	" Arch Linux ARM\nOpenRD-Base"
+#   define CONFIG_FDT_FILE	"/boot/dtbs/kirkwood-openrd-base.dtb\0"
 #  else
 #   error Unknown OpenRD board specified
 #  endif
@@ -44,7 +47,9 @@
  * Commands configuration
  */
 #define CONFIG_SYS_NO_FLASH		/* Declare no flash (NOR/SPI) */
-#define CONFIG_SYS_MVFS
+#define CONFIG_CONSOLE_MUX
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+
 #include <config_cmd_default.h>
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_ENV
@@ -53,12 +58,21 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_USB
 #define CONFIG_CMD_IDE
+#define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_SUPPORT_RAW_INITRD
+#define CONFIG_OF_LIBFDT
 
 /*
  * mv-common.h should be defined after CMD configs since it used them
  * to enable certain macros
  */
 #include "mv-common.h"
+
+#undef CONFIG_SYS_PROMPT	/* previously defined in mv-common.h */
+#define CONFIG_SYS_PROMPT	"OpenRD> "	/* Command Prompt */
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 
 /*
  *  Environment variables configurations
@@ -76,26 +90,61 @@
 #define CONFIG_ENV_SIZE			0x20000	/* 128k */
 #define CONFIG_ENV_ADDR			0x60000
 #define CONFIG_ENV_OFFSET		0x60000	/* env starts here */
+#define CONFIG_LOADADDR			0x810000
 
 /*
  * Default environment variables
  */
-#define CONFIG_BOOTCOMMAND		"${x_bootcmd_kernel}; "	\
-	"setenv bootargs ${x_bootargs} ${x_bootargs_root}; "	\
-	"${x_bootcmd_usb}; bootm 0x6400000;"
+#define CONFIG_MTDPARTS \
+	"mtdparts=nand_mtd:1M(u-boot),128k(fdt),8M(uImage),-(rootfs)\0"
 
-#define MTDIDS_DEFAULT		"nand0=nand_mtd"
-#define MTDPARTS_DEFAULT	"mtdparts=nand_mtd:0x100000@0x000000(uboot),"\
-	"0x400000@0x100000(uImage),"\
-	"0x1fb00000@0x500000(rootfs)"
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	"console=ttyS0\0" \
+	"mtdids=nand0=nand_mtd\0" \
+	"mtdparts="CONFIG_MTDPARTS \
+	"zimage=/boot/zImage\0" \
+	"uimage=/boot/uImage\0" \
+	"fdt_file="CONFIG_FDT_FILE \
+	"fdt_addr=0x800000\0" \
+	"usbdev=0\0" \
+	"usbpart=1\0" \
+	"usbroot=/dev/sda1 rw rootwait\0" \
+	"usbargs=setenv bootargs console=${console},${baudrate} " \
+		"${optargs} " \
+		"root=${usbroot} " \
+		"${mtdparts}\0" \
+	"loadbootenv=load usb ${usbdev}:${usbpart} ${loadaddr} /boot/uEnv.txt\0" \
+	"importbootenv=echo Importing environment from USB (uEnv.txt)...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"loaduimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${uimage}\0" \
+	"loadzimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${zimage}\0" \
+	"loadfdt=load usb ${usbdev}:${usbpart} ${fdt_addr} ${fdt_file}\0" \
+	"usbbootz=echo Booting from USB ...; " \
+		"run usbargs; " \
+		"bootz ${loadaddr} - ${fdt_addr};\0" \
+	"usbbootm=echo Booting from USB ...; " \
+		"run usbargs; " \
+		"bootm ${loadaddr};\0"
 
-#define CONFIG_EXTRA_ENV_SETTINGS	"x_bootargs=console"		\
-	"=ttyS0,115200 "MTDPARTS_DEFAULT " rw ubi.mtd=2,2048\0"		\
-	"x_bootcmd_kernel=nand read 0x6400000 0x100000 0x300000\0"	\
-	"x_bootcmd_usb=usb start\0"					\
-	"x_bootargs_root=root=ubi0:rootfs rootfstype=ubifs\0"		\
-	"mtdids="MTDIDS_DEFAULT"\0"					\
-	"mtdparts="MTDPARTS_DEFAULT"\0"
+#define CONFIG_BOOTCOMMAND \
+	"usb start;" \
+	"if run loadbootenv; then " \
+		"run importbootenv;" \
+	"fi;" \
+	"echo Checking if uenvcmd is set ...;" \
+	"if test -n $uenvcmd; then " \
+		"echo Running uenvcmd ...;" \
+		"run uenvcmd;" \
+	"fi;" \
+	"echo Running default loadzimage ...;" \
+	"if run loadzimage; then " \
+		"run loadfdt;" \
+		"run usbbootz;" \
+	"fi;" \
+	"echo Running default loaduimage ...;" \
+	"if run loaduimage; then " \
+		"run usbbootm;" \
+	"fi;"
 
 /*
  * Ethernet Driver configuration
