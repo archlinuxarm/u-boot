@@ -96,31 +96,31 @@
 #define CONFIG_ENV_SIZE			0x20000	/* 128k */
 #define CONFIG_ENV_ADDR			0xC0000
 #define CONFIG_ENV_OFFSET		0xC0000	/* env starts here */
-#define CONFIG_LOADADDR			0x800000
+#define CONFIG_LOADADDR			0x810000
 
 /*
  * Default environment variables
  */
 #define CONFIG_MTDPARTS \
-	"mtdparts=orion_nand:1M(u-boot),4M(uImage),32M(rootfs),-(data)\0"
+	"mtdparts=orion_nand:1M(u-boot),128k(fdt),8M(uImage),-(rootfs)\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"console=console=ttyS0,115200\0" \
+	"console=ttyS0\0" \
 	"mtdids=nand0=orion_nand\0" \
 	"mtdparts="CONFIG_MTDPARTS \
 	"zimage=/boot/zImage\0" \
 	"uimage=/boot/uImage\0" \
-	"fdt_file=/boot/dtbs/kirkwood-dockstar.dtb\0" \
-	"fdt_addr=0x1400000\0" \
+	"fdt_file=/boot/dtbs/kirkwood-goflexnet.dtb\0" \
+	"fdt_addr=0x800000\0" \
 	"usbdev=0\0" \
 	"usbpart=1\0" \
 	"usbroot=/dev/sda1 rw rootwait\0" \
-	"usbargs=setenv bootargs console=${console} " \
+	"usbargs=setenv bootargs console=${console},${baudrate} " \
 		"${optargs} " \
 		"root=${usbroot} " \
 		"${mtdparts}\0" \
 	"loadbootenv=load usb ${usbdev}:${usbpart} ${loadaddr} /boot/uEnv.txt\0" \
-	"importbootenv=echo Importing environment from mmc (uEnv.txt)...; " \
+	"importbootenv=echo Importing environment from USB (uEnv.txt)...; " \
 		"env import -t $loadaddr $filesize\0" \
 	"loaduimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${uimage}\0" \
 	"loadzimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${zimage}\0" \
@@ -145,11 +145,11 @@
 	"echo Running default loadzimage ...;" \
 	"if run loadzimage; then " \
 		"run loadfdt;" \
-		"run mmcbootz;" \
+		"run usbbootz;" \
 	"fi;" \
 	"echo Running default loaduimage ...;" \
 	"if run loaduimage; then " \
-		"run mmcbootm;" \
+		"run usbbootm;" \
 	"fi;"
 /*
  * Ethernet Driver configuration
