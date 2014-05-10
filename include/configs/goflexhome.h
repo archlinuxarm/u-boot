@@ -63,6 +63,7 @@
 #define CONFIG_CMD_DATE
 #define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
 #define CONFIG_CMD_BOOTZ
+#define CONFIG_CMD_SETEXPR
 #define CONFIG_SUPPORT_RAW_INITRD
 #define CONFIG_OF_LIBFDT
 
