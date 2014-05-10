@@ -165,7 +165,7 @@
 #endif /*CONFIG_MVSATA_IDE*/
 
 /*
- * Date Time
+ * RTC driver configuration
  */
 #ifdef CONFIG_CMD_DATE
 #define CONFIG_RTC_MV
