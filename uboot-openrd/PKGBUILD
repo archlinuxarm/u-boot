@@ -1,0 +1,50 @@
+# U-Boot: Marvell Kirkwood platforms
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=2
+
+pkgbase=uboot-openrd
+pkgname=('uboot-openrd-base' 'uboot-openrd-client' 'uboot-openrd-ultimate')
+pkgver=2014.04
+pkgrel=1
+arch=('arm')
+url="https://github.com/archlinuxarm/u-boot"
+makedepends=('git')
+license=('GPL')
+source=("git+https://github.com/archlinuxarm/u-boot.git#branch=2014.04-OpenRD-WIP")
+md5sums=('SKIP')
+
+build() {
+  cd u-boot
+  
+  unset CFLAGS CXXFLAGS LDFLAGS
+  
+  mkdir bins
+  for i in openrd_base openrd_client openrd_ultimate; do
+    make distclean
+    make ${i}_config
+    make u-boot.kwb
+    dd if=u-boot.kwb of=bins/uboot-${i}.kwb bs=512k conv=sync
+  done;
+}
+
+package_uboot-openrd-base() {
+  pkgdesc="U-Boot for the OpenRD Base"
+
+  mkdir -p "${pkgdir}"/boot
+  cp u-boot/bins/uboot-openrd_base.kwb "${pkgdir}"/boot
+}
+
+package_uboot-openrd-client() {
+  pkgdesc="U-Boot for the OpenRD Client"
+
+  mkdir -p "${pkgdir}"/boot
+  cp u-boot/bins/uboot-openrd_client.kwb "${pkgdir}"/boot
+}
+
+package_uboot-openrd-ultimate() {
+  pkgdesc="U-Boot for the OpenRD Ultimate"
+
+  mkdir -p "${pkgdir}"/boot
+  cp u-boot/bins/uboot-openrd_ultimate.kwb "${pkgdir}"/boot
+}
