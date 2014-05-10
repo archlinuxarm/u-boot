@@ -25,12 +25,14 @@
 #define CONFIG_KW88F6281	1	/* SOC Name */
 #define CONFIG_MACH_DOCKSTAR	/* Machine type */
 #define CONFIG_SKIP_LOWLEVEL_INIT	/* disable board lowlevel_init */
-#define CONFIG_LOADADDR		0x800000
 
 /*
  * Commands configuration
  */
 #define CONFIG_SYS_NO_FLASH		/* Declare no flash (NOR/SPI) */
+#define CONFIG_CONSOLE_MUX
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+
 #include <config_cmd_default.h>
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_ENV
@@ -38,8 +40,10 @@
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_USB
+#define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
 #define CONFIG_CMD_BOOTZ
 #define CONFIG_SUPPORT_RAW_INITRD
+#define CONFIG_OF_LIBFDT
 
 /*
  * mv-common.h should be defined after CMD configs since it used them
@@ -66,31 +70,33 @@
  * it has to be rounded to sector size
  */
 #define CONFIG_ENV_SIZE			0x20000	/* 128k */
-#define CONFIG_ENV_ADDR			0x60000
-#define CONFIG_ENV_OFFSET		0x60000	/* env starts here */
+#define CONFIG_ENV_ADDR			0xC0000
+#define CONFIG_ENV_OFFSET		0xC0000	/* env starts here */
+#define CONFIG_LOADADDR			0x810000
 
 /*
  * Default environment variables
  */
-#define CONFIG_MTDPARTS		"mtdparts=orion_nand:1M(u-boot),4M(uImage),32M(rootfs),-(data)\0"
+#define CONFIG_MTDPARTS \
+	"mtdparts=orion_nand:1M(u-boot),128k(fdt),8M(uImage),-(rootfs)\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"console=console=ttyS0,115200\0" \
+	"console=ttyS0\0" \
 	"mtdids=nand0=orion_nand\0" \
 	"mtdparts="CONFIG_MTDPARTS \
 	"zimage=/boot/zImage\0" \
 	"uimage=/boot/uImage\0" \
 	"fdt_file=/boot/dtbs/kirkwood-dockstar.dtb\0" \
-	"fdt_addr=0x1400000\0" \
+	"fdt_addr=0x800000\0" \
 	"usbdev=0\0" \
 	"usbpart=1\0" \
 	"usbroot=/dev/sda1 rw rootwait\0" \
-	"usbargs=setenv bootargs console=${console} " \
+	"usbargs=setenv bootargs console=${console},${baudrate} " \
 		"${optargs} " \
 		"root=${usbroot} " \
 		"${mtdparts}\0" \
 	"loadbootenv=load usb ${usbdev}:${usbpart} ${loadaddr} /boot/uEnv.txt\0" \
-	"importbootenv=echo Importing environment from mmc (uEnv.txt)...; " \
+	"importbootenv=echo Importing environment from USB (uEnv.txt)...; " \
 		"env import -t $loadaddr $filesize\0" \
 	"loaduimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${uimage}\0" \
 	"loadzimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${zimage}\0" \
@@ -115,12 +121,12 @@
 	"echo Running default loadzimage ...;" \
 	"if run loadzimage; then " \
 		"run loadfdt;" \
-		"run mmcbootz;" \
+		"run usbbootz;" \
 	"fi;" \
 	"echo Running default loaduimage ...;" \
 	"if run loaduimage; then " \
-		"run mmcbootm;" \
-	"fi;\0"
+		"run usbbootm;" \
+	"fi;"
 
 /*
  * Ethernet Driver configuration
@@ -129,22 +135,5 @@
 #define CONFIG_MVGBE_PORTS	{1, 0}	/* enable port 0 only */
 #define CONFIG_PHY_BASE_ADR	0
 #endif /* CONFIG_CMD_NET */
-
-/*
- * File system
- */
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT4
-#define CONFIG_CMD_FS_GENERIC
-#define CONFIG_CMD_UBI
-#define CONFIG_CMD_UBIFS
-#define CONFIG_RBTREE
-#define CONFIG_MTD_DEVICE               /* needed for mtdparts commands */
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_CMD_MTDPARTS
-#define CONFIG_LZO
-#define CONFIG_EFI_PARTITION
-#define CONFIG_OF_LIBFDT
 
 #endif /* _CONFIG_DOCKSTAR_H */
