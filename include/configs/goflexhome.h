@@ -100,7 +100,7 @@
  * Default environment variables
  */
 #define CONFIG_MTDPARTS \
-	"mtdparts=orion_nand:1M(u-boot),128k(fdt),8M(uImage),-(rootfs)\0"
+	"mtdparts=orion_nand:1M(u-boot),-(rootfs)\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"console=ttyS0\0" \
@@ -110,45 +110,52 @@
 	"uimage=/boot/uImage\0" \
 	"fdt_file=/boot/dtbs/kirkwood-goflexnet.dtb\0" \
 	"fdt_addr=0x800000\0" \
-	"usbdev=0\0" \
-	"usbpart=1\0" \
-	"usbroot=/dev/sda1 rw rootwait\0" \
-	"usbargs=setenv bootargs console=${console},${baudrate} " \
+	"setargs=setenv bootargs console=${console},${baudrate} " \
 		"${optargs} " \
-		"root=${usbroot} " \
+		"root=/dev/sd${letter}1 rw rootwait " \
 		"${mtdparts}\0" \
-	"loadbootenv=load usb ${usbdev}:${usbpart} ${loadaddr} /boot/uEnv.txt\0" \
-	"importbootenv=echo Importing environment from USB (uEnv.txt)...; " \
+	"loadbootenv=load ${type} ${disk}:1 ${loadaddr} /boot/uEnv.txt\0" \
+	"importbootenv=echo Importing environment (uEnv.txt)...; " \
 		"env import -t $loadaddr $filesize\0" \
-	"loaduimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${uimage}\0" \
-	"loadzimage=load usb ${usbdev}:${usbpart} ${loadaddr} ${zimage}\0" \
-	"loadfdt=load usb ${usbdev}:${usbpart} ${fdt_addr} ${fdt_file}\0" \
-	"usbbootz=echo Booting from USB ...; " \
-		"run usbargs; " \
+	"loaduimage=load ${type} ${disk}:1 ${loadaddr} ${uimage}\0" \
+	"loadzimage=load ${type} ${disk}:1 ${loadaddr} ${zimage}\0" \
+	"loadfdt=load ${type} ${disk}:1 ${fdt_addr} ${fdt_file}\0" \
+	"bootz=echo Booting from ${disk} ...; " \
+		"run setargs; " \
 		"bootz ${loadaddr} - ${fdt_addr};\0" \
-	"usbbootm=echo Booting from USB ...; " \
-		"run usbargs; " \
-		"bootm ${loadaddr};\0"
+	"bootm=echo Booting from ${disk} ...; " \
+		"run setargs; " \
+		"bootm ${loadaddr};\0" \
+	"load=echo Attempting to boot from ${type} ${disk}:1...;" \
+		"if run loadbootenv; then " \
+			"run importbootenv;" \
+		"fi;" \
+		"echo Checking if uenvcmd is set ...;" \
+		"if test -n $uenvcmd; then " \
+			"echo Running uenvcmd ...;" \
+			"run uenvcmd;" \
+		"fi;" \
+		"echo Running default loadzimage ...;" \
+		"if run loadzimage; then " \
+			"run loadfdt;" \
+			"run bootz;" \
+		"fi;" \
+		"echo Running default loaduimage ...;" \
+		"if run loaduimage; then " \
+			"run bootm;" \
+		"fi;\0"
 
 #define CONFIG_BOOTCOMMAND \
-	"usb start;" \
-	"if run loadbootenv; then " \
-		"run importbootenv;" \
-	"fi;" \
-	"echo Checking if uenvcmd is set ...;" \
-	"if test -n $uenvcmd; then " \
-		"echo Running uenvcmd ...;" \
-		"run uenvcmd;" \
-	"fi;" \
-	"echo Running default loadzimage ...;" \
-	"if run loadzimage; then " \
-		"run loadfdt;" \
-		"run usbbootz;" \
-	"fi;" \
-	"echo Running default loaduimage ...;" \
-	"if run loaduimage; then " \
-		"run usbbootm;" \
-	"fi;"
+	"ide reset; usb start; setenv letter 9;" \
+	"for type in ide usb; do " \
+		"for disk in 0; do " \
+			"if ${type} part ${disk};then " \
+				"setexpr letter $letter + 1;" \
+				"run load;" \
+			"fi;" \
+		"done;" \
+	"done;"
+
 
 /*
  * Ethernet Driver configuration
