@@ -156,7 +156,6 @@
 		"done;" \
 	"done;"
 
-
 /*
  * Ethernet Driver configuration
  */
