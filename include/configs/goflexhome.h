@@ -18,7 +18,7 @@
 /*
  * Version number information
  */
-#define CONFIG_IDENT_STRING	"\nSeagate GoFlex Home"
+#define CONFIG_IDENT_STRING	" Arch Linux ARM\nSeagate GoFlex Home"
 
 /*
  * High Level Configuration Options (easy to change)
@@ -61,8 +61,11 @@
 #define CONFIG_CMD_USB
 #define CONFIG_CMD_IDE
 #define CONFIG_CMD_DATE
-#define CONFIG_CMD_EXT4
 #define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_CMD_SETEXPR
+#define CONFIG_SUPPORT_RAW_INITRD
+#define CONFIG_OF_LIBFDT
 
 /*
  * mv-common.h should be defined after CMD configs since it used them
@@ -72,6 +75,8 @@
 
 #undef CONFIG_SYS_PROMPT	/* previously defined in mv-common.h */
 #define CONFIG_SYS_PROMPT	"GoFlexHome> "	/* Command Prompt */
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 
 /*
  *  Environment variables configurations
@@ -89,26 +94,67 @@
 #define CONFIG_ENV_SIZE			0x20000	/* 128k */
 #define CONFIG_ENV_ADDR			0xC0000
 #define CONFIG_ENV_OFFSET		0xC0000	/* env starts here */
+#define CONFIG_LOADADDR			0x810000
 
 /*
  * Default environment variables
  */
-#define CONFIG_BOOTCOMMAND \
-	"setenv bootargs ${console} ${mtdparts} ${bootargs_root}; " \
-	"ubi part root; " \
-	"ubifsmount ubi:root; " \
-	"ubifsload 0x800000 ${kernel}; " \
-	"bootm 0x800000"
-
 #define CONFIG_MTDPARTS \
-	"mtdparts=orion_nand:1m(uboot),6M(uImage),-(root)\0"
+	"mtdparts=orion_nand:1M(u-boot),-(rootfs)\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"console=console=ttyS0,115200\0" \
+	"console=ttyS0\0" \
 	"mtdids=nand0=orion_nand\0" \
 	"mtdparts="CONFIG_MTDPARTS \
-	"kernel=/boot/uImage\0" \
-	"bootargs_root=ubi.mtd=root root=ubi0:root rootfstype=ubifs ro\0"
+	"zimage=/boot/zImage\0" \
+	"uimage=/boot/uImage\0" \
+	"fdt_file=/boot/dtbs/kirkwood-goflexnet.dtb\0" \
+	"fdt_addr=0x800000\0" \
+	"setargs=setenv bootargs console=${console},${baudrate} " \
+		"${optargs} " \
+		"root=/dev/sd${letter}1 rw rootwait " \
+		"${mtdparts}\0" \
+	"loadbootenv=load ${type} ${disk}:1 ${loadaddr} /boot/uEnv.txt\0" \
+	"importbootenv=echo Importing environment (uEnv.txt)...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"loaduimage=load ${type} ${disk}:1 ${loadaddr} ${uimage}\0" \
+	"loadzimage=load ${type} ${disk}:1 ${loadaddr} ${zimage}\0" \
+	"loadfdt=load ${type} ${disk}:1 ${fdt_addr} ${fdt_file}\0" \
+	"bootz=echo Booting from ${disk} ...; " \
+		"run setargs; " \
+		"bootz ${loadaddr} - ${fdt_addr};\0" \
+	"bootm=echo Booting from ${disk} ...; " \
+		"run setargs; " \
+		"bootm ${loadaddr};\0" \
+	"load=echo Attempting to boot from ${type} ${disk}:1...;" \
+		"if run loadbootenv; then " \
+			"run importbootenv;" \
+		"fi;" \
+		"echo Checking if uenvcmd is set ...;" \
+		"if test -n $uenvcmd; then " \
+			"echo Running uenvcmd ...;" \
+			"run uenvcmd;" \
+		"fi;" \
+		"echo Running default loadzimage ...;" \
+		"if run loadzimage; then " \
+			"run loadfdt;" \
+			"run bootz;" \
+		"fi;" \
+		"echo Running default loaduimage ...;" \
+		"if run loaduimage; then " \
+			"run bootm;" \
+		"fi;\0"
+
+#define CONFIG_BOOTCOMMAND \
+	"ide reset; usb start; setenv letter 9;" \
+	"for type in ide usb; do " \
+		"for disk in 0; do " \
+			"if ${type} part ${disk};then " \
+				"setexpr letter $letter + 1;" \
+				"run load;" \
+			"fi;" \
+		"done;" \
+	"done;"
 
 /*
  * Ethernet Driver configuration
@@ -119,17 +165,19 @@
 #endif /* CONFIG_CMD_NET */
 
 /*
- *  * SATA Driver configuration
- *   */
+ * SATA Driver configuration
+ */
 #ifdef CONFIG_MVSATA_IDE
 #define CONFIG_SYS_ATA_IDE0_OFFSET      MV_SATA_PORT0_OFFSET
 #endif /*CONFIG_MVSATA_IDE*/
 
 /*
- *  * RTC driver configuration
- *   */
+ * RTC driver configuration
+ */
 #ifdef CONFIG_CMD_DATE
 #define CONFIG_RTC_MV
+#define CONFIG_CMD_SNTP
+#define CONFIG_CMD_DNS
 #endif /* CONFIG_CMD_DATE */
 
 #endif /* _CONFIG_GOFLEXHOME_H */
