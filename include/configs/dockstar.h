@@ -125,7 +125,7 @@
 		"fi;\0"
 
 #define CONFIG_BOOTCOMMAND \
-	"ide reset; usb start; setenv letter 9;" \
+	"usb start; setenv letter 9;" \
 	"for type in usb; do " \
 		"for disk in 0 1 2 3; do " \
 			"if ${type} part ${disk};then " \
