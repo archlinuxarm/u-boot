@@ -9,14 +9,18 @@ pkgrel=1
 arch=('arm')
 pkgdesc="U-Boot for the Seagate GoFlex Home"
 url="https://github.com/archlinuxarm/u-boot"
+depends=('uboot-env' 'mtd-utils')
 makedepends=('git')
 license=('GPL')
-source=("git+https://github.com/archlinuxarm/u-boot.git#branch=2014.04-GFH-WIP")
-md5sums=('SKIP')
+install='uboot-goflexhome.install'
+source=("git+https://github.com/archlinuxarm/u-boot.git#branch=2014.04-GFH-WIP"
+        'http://archlinuxarm.org/os/armv5te/boot/goflexhome/uboot-goflexhome.env')
+md5sums=('SKIP'
+         'b9c1acb44e25a45767f31da1f9fd0261')
 
 build() {
   cd u-boot
-  
+
   unset CFLAGS CXXFLAGS LDFLAGS
   
   make distclean
@@ -28,4 +32,5 @@ build() {
 package() {
   mkdir -p "${pkgdir}"/boot
   cp u-boot/uboot-goflexhome.kwb "${pkgdir}"/boot
+  cp "${srcdir}"/uboot-goflexhome.env "${pkgdir}"/boot
 }
