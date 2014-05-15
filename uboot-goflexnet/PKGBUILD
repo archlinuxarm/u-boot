@@ -1,0 +1,36 @@
+# U-Boot: Marvell Kirkwood platforms
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=2
+
+pkgname=uboot-goflexnet
+pkgver=2014.04
+pkgrel=1
+arch=('arm')
+pkgdesc="U-Boot for the Seagate GoFlex Net"
+url="https://github.com/archlinuxarm/u-boot"
+depends=('uboot-env' 'mtd-utils')
+makedepends=('git')
+license=('GPL')
+install='uboot-goflexnet.install'
+source=("git+https://github.com/archlinuxarm/u-boot.git#branch=2014.04-GFN-WIP"
+        'http://archlinuxarm.org/os/armv5te/boot/goflexnet/uboot-goflexnet.env')
+md5sums=('SKIP'
+         '88197b33fee74a31d4914ca4f14007ec')
+
+build() {
+  cd u-boot
+
+  unset CFLAGS CXXFLAGS LDFLAGS
+  
+  make distclean
+  make goflexnet_config
+  make u-boot.kwb
+  dd if=u-boot.kwb of=uboot-goflexnet.kwb bs=512k conv=sync
+}
+
+package() {
+  mkdir -p "${pkgdir}"/boot
+  cp u-boot/uboot-goflexnet.kwb "${pkgdir}"/boot
+  cp "${srcdir}"/uboot-goflexnet.env "${pkgdir}"/boot
+}
