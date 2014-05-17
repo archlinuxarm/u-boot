@@ -12,7 +12,7 @@
 /*
  * Version number information
  */
-#define CONFIG_IDENT_STRING	"\nMarvell-GuruPlug"
+#define CONFIG_IDENT_STRING	" Arch Linux ARM\nMarvell GuruPlug"
 
 /*
  * High Level Configuration Options (easy to change)
@@ -27,20 +27,33 @@
  * Commands configuration
  */
 #define CONFIG_SYS_NO_FLASH		/* Declare no flash (NOR/SPI) */
+#define CONFIG_CONSOLE_MUX
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+
 #include <config_cmd_default.h>
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_ENV
-#define CONFIG_CMD_FAT
+#define CONFIG_CMD_MII
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_USB
-#define CONFIG_CMD_IDE
+#define CONFIG_CMD_DATE
+#define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_CMD_SETEXPR
+#define CONFIG_SUPPORT_RAW_INITRD
+#define CONFIG_OF_LIBFDT
 
 /*
  * mv-common.h should be defined after CMD configs since it used them
  * to enable certain macros
  */
 #include "mv-common.h"
+
+#undef CONFIG_SYS_PROMPT	/* previously defined in mv-common.h */
+#define CONFIG_SYS_PROMPT	"GuruPlug> "	/* Command Prompt */
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 
 /*
  *  Environment variables configurations
@@ -56,24 +69,69 @@
  * it has to be rounded to sector size
  */
 #define CONFIG_ENV_SIZE			0x20000	/* 128k */
-#define CONFIG_ENV_ADDR			0x60000
-#define CONFIG_ENV_OFFSET		0x60000	/* env starts here */
+#define CONFIG_ENV_ADDR			0xC0000
+#define CONFIG_ENV_OFFSET		0xC0000	/* env starts here */
+#define CONFIG_LOADADDR			0x810000
 
 /*
  * Default environment variables
  */
-#define CONFIG_BOOTCOMMAND		"setenv ethact egiga0; " \
-	"${x_bootcmd_ethernet}; setenv ethact egiga1; " \
-	"${x_bootcmd_ethernet}; ${x_bootcmd_usb}; ${x_bootcmd_kernel}; "\
-	"setenv bootargs ${x_bootargs} ${x_bootargs_root}; "	\
-	"bootm 0x6400000;"
+#define CONFIG_MTDPARTS \
+	"mtdparts=orion_nand:1M(u-boot),-(rootfs)\0"
 
-#define CONFIG_EXTRA_ENV_SETTINGS	\
-	"x_bootcmd_ethernet=ping 192.168.2.1\0"	\
-	"x_bootcmd_usb=usb start\0"	\
-	"x_bootcmd_kernel=nand read.e 0x6400000 0x100000 0x400000\0" \
-	"x_bootargs=console=ttyS0,115200\0"	\
-	"x_bootargs_root=ubi.mtd=2 root=ubi0:rootfs rootfstype=ubifs\0"
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	"console=ttyS0\0" \
+	"mtdids=nand0=orion_nand\0" \
+	"mtdparts="CONFIG_MTDPARTS \
+	"zimage=/boot/zImage\0" \
+	"uimage=/boot/uImage\0" \
+	"fdt_file=/boot/dtbs/kirkwood-dockstar.dtb\0" \
+	"fdt_addr=0x800000\0" \
+	"setargs=setenv bootargs console=${console},${baudrate} " \
+		"${optargs} " \
+		"root=/dev/sd${letter}1 rw rootwait " \
+		"${mtdparts}\0" \
+	"loadbootenv=load ${type} ${disk}:1 ${loadaddr} /boot/uEnv.txt\0" \
+	"importbootenv=echo Importing environment (uEnv.txt)...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"loaduimage=load ${type} ${disk}:1 ${loadaddr} ${uimage}\0" \
+	"loadzimage=load ${type} ${disk}:1 ${loadaddr} ${zimage}\0" \
+	"loadfdt=load ${type} ${disk}:1 ${fdt_addr} ${fdt_file}\0" \
+	"bootz=echo Booting from ${disk} ...; " \
+		"run setargs; " \
+		"bootz ${loadaddr} - ${fdt_addr};\0" \
+	"bootm=echo Booting from ${disk} ...; " \
+		"run setargs; " \
+		"bootm ${loadaddr};\0" \
+	"load=echo Attempting to boot from ${type} ${disk}:1...;" \
+		"if run loadbootenv; then " \
+			"run importbootenv;" \
+		"fi;" \
+		"echo Checking if uenvcmd is set ...;" \
+		"if test -n $uenvcmd; then " \
+			"echo Running uenvcmd ...;" \
+			"run uenvcmd;" \
+		"fi;" \
+		"echo Running default loadzimage ...;" \
+		"if run loadzimage; then " \
+			"run loadfdt;" \
+			"run bootz;" \
+		"fi;" \
+		"echo Running default loaduimage ...;" \
+		"if run loaduimage; then " \
+			"run bootm;" \
+		"fi;\0"
+
+#define CONFIG_BOOTCOMMAND \
+	"usb start; setenv letter 9;" \
+	"for type in usb; do " \
+		"for disk in 0 1; do " \
+			"if ${type} part ${disk};then " \
+				"setexpr letter $letter + 1;" \
+				"run load;" \
+			"fi;" \
+		"done;" \
+	"done;"
 
 /*
  * Ethernet Driver configuration
@@ -91,5 +149,14 @@
 #endif /*CONFIG_MVSATA_IDE*/
 
 #define CONFIG_SYS_ALT_MEMTEST
+
+/*
+ * RTC driver configuration
+ */
+#ifdef CONFIG_CMD_DATE
+#define CONFIG_RTC_MV
+#define CONFIG_CMD_SNTP
+#define CONFIG_CMD_DNS
+#endif /* CONFIG_CMD_DATE */
 
 #endif /* _CONFIG_GURUPLUG_H */
